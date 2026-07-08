@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Test App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background: #f4f4f9; }
+        .box { border: 1px solid #ccc; padding: 20px; display: inline-block; background: white; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1); }
+        .status { font-weight: bold; color: green; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Chaos Resiliency Test Frontend</h2>
+        <p>Status: <span id="status" class="status">Loading...</span></p>
+        <p id="latency"></p>
+    </div>
+
+    <script>
+        // Local machine pe localhost chalega, K8s me reverse proxy/ingress handle karega
+        const BACKEND_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : '/api';
+
+        async function fetchMetrics() {
+            const startTime = performance.now();
+            const statusEl = document.getElementById('status');
+            const latencyEl = document.getElementById('latency');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/data`);
+                if(!response.ok) throw new Error("Server Error");
+                const data = await response.json();
+                
+                const endTime = performance.now();
+                statusEl.innerText = "Healthy (200 OK)";
+                statusEl.style.color = "green";
+                latencyEl.innerText = `Response Time: ${Math.round(endTime - startTime)}ms`;
+            } catch (error) {
+                statusEl.innerText = "Degraded / Timeout ❌";
+                statusEl.style.color = "red";
+                latencyEl.innerText = `Fetch failed. System Under Attack!`;
+            }
+        }
+
+        // Har 2 second me auto-hit taaki live chaos experiment ka response dikhe
+        setInterval(fetchMetrics, 2000);
+        fetchMetrics();
+    </script>
+</body>
+</html>
